@@ -136,7 +136,7 @@ app.get("/teste/:arquivo", (req, res) => {
     }
     res.render('index', { dados: dados })
 })
-
+//TESTE
 
 app.listen(8080, () => {
     console.log("Servidor ligado")
