@@ -13,12 +13,13 @@
         crossorigin="anonymous"></script>
 </head>
 
-<body onload="start()">
+<body>
     <div class="container mt-3">
         <form action="/exportar" method="post" enctype="multipart/form-data">
             <input class="form-control" onchange="validar(this.value)" type="file" id="arquivo" name="arquivo">
             <button class="btn btn-warning text-white mt-2" id="buttom" type="submit">SUBIMIT</button>
         </form>
+        <%if(dados !=0){%>
             <button class="btn btn-primary form-control my-5" id="bntDonwload" onclick="exceller()">Download</button>
             <div class="progress my-2">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
@@ -41,13 +42,76 @@
                             <th class="text-center">Tel2 Status</th>
                         </tr>
                     </thead>
-                    <tbody id="tb">
-                        <tr >
-
-                        </tr>
+                    <tbody>
+                        <%dados.forEach((dado, index)=>{%>
+                            <%if((dado.tel1 !=undefined || dado.tel2 !=undefined)){%>
+                                <%if(dado.id !='Id' ){%>
+                                    <tr>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.id%>
+                                        </td>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.nome%>
+                                        </td>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.cgc%>
+                                        </td>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.email[0].email%>
+                                        </td>
+                                        <%if(dado.email[0].status=='valido' ){%>
+                                            <td style="background-color:green; color: white; text-align: center;"
+                                                class="text-center bg-success text-white">
+                                                <p>VALIDO</p>
+                                            </td>
+                                        <%}else{%>
+                                            <td style="background-color: red; color: white; text-align: center;"
+                                                class="text-center bg-danger text-white">
+                                               <p>INVALIDO</p> 
+                                            </td>
+                                        <%}%>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.tel1[0].numero%>
+                                        </td>
+                                        <td style="text-align: center;" class="text-center">
+                                            <%=dado.tel1[0].is%>
+                                        </td>
+                                        <%if(dado.tel1[0].status==true ){%>
+                                            <td style="background-color:green; color: white; text-align: center;"
+                                                class="text-center bg-success text-white">
+                                                VALIDO
+                                            </td>
+                                        <%}else{%>
+                                            <td style="background-color: red; color: white; text-align: center;"
+                                                class="text-center bg-danger text-white">
+                                                INVALIDO
+                                            </td>
+                                        <%}%>
+                                             <td style="text-align: center;" class="text-center">
+                                                 <%=dado.tel2[0].numero%>
+                                             </td>
+                                             <td style="text-align: center;" class="text-center">
+                                                 <%=dado.tel2[0].is%>
+                                             </td>
+                                            <%if(dado.tel2[0].status==true){%>
+                                                <td style="background-color:green; color: white; text-align: center;"
+                                                    class="text-center bg-success text-white">
+                                                    <p>VALIDO</p>
+                                                </td>
+                                            <%}else{%>
+                                                <td style="background-color: red; color: white; text-align: center;"
+                                                    class="text-center bg-danger text-white">
+                                                    <p>INVALIDO</p>
+                                                </td>
+                                            <%}%>
+                                    </tr>
+                                <%}%>
+                            <%}%>
+                        <%})%>
                     </tbody>
                 </table>
             </div>
+            <%}%>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
         integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
@@ -58,7 +122,6 @@
     <script src="/js/jQuery.js"></script>
     <script src="/js/dataTableBootstrap5.min.js"></script>
     <script src="/js/jQueryDataTable.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
         $(document).ready(function () {
             $('#toExcel').DataTable();
@@ -70,38 +133,6 @@
                 alert("Arquivo não está no formato correto!!")
                 document.getElementById("buttom").disabled = true
             }
-        }
-    </script>
-
-    <script>
-        async function start(){
-            var tb = document.getElementById("tb")
-            axios.get("/1639599840032.csv").then(resp =>{
-                    var dados = resp.data.dados
-                    dados.forEach(dado => {
-                        var tr = document.createElement('tr')
-                        var tdId = document.createElement('td')
-                        var tdNome = document.createElement('td')
-                        var tdCgc = document.createElement('td')
-                        var tdEmail = document.createElement('td')
-                        var tdEmailSt = document.createElement('td')
-                        
-                        tdId.innerHTML = dado.id
-                        tdNome.innerHTML = dado.nome
-                        tdCgc.innerHTML = dado.cgc
-                        tdEmail.innerHTML = dado.email[0].email
-                        tdEmailSt.innerHTML = dado.email[0].status
-
-                        tr.insertBefore(tdId,null) 
-                        tr.insertBefore(tdNome,null) 
-                        tr.insertBefore(tdCgc,null) 
-                        tr.insertBefore(tdEmail,null) 
-                        tr.insertBefore(tdEmailSt,null) 
-
-                        tb.insertBefore(tr,null)
-                    });
-            })
-
         }
     </script>
 

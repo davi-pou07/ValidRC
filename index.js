@@ -66,7 +66,7 @@ app.get("/:arquivo", (req, res) => {
         } else {
             dados = 0
         }
-        res.render('index', { dados: dados })
+        res.json({ dados: dados })
 })
 
 app.get("/teste/:arquivo", (req, res) => {
@@ -76,7 +76,7 @@ app.get("/teste/:arquivo", (req, res) => {
         var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arquivo}`));
         var tabela = obj[0].data
         tabela.forEach((linha, index) => {
-            if (index != 0) {
+            if (index != 0 && index<1000) {
                 function validaTelefone2(ddd, numero) {
                     var phone = []
                     if (numero != undefined && ddd != undefined) {
