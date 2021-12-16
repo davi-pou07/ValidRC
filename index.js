@@ -7,11 +7,7 @@ const ejs = require("ejs")
 const fs = require('fs')
 const multer = require("multer");
 const validator = require("validator")
-const excel = require('node-excel-export');
 
-const xl = require('excel4node');
-const wb = new xl.Workbook();
-const ws = wb.addWorksheet('Worksheet Name');
 
 const validaTelefone = require("./public/js/validaTelefone.js")
 const validaEmail = require("./public/js/validaEmail.js")
@@ -38,10 +34,51 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: false, limit: "50mb" }))
 app.use(bodyParser.json({ limit: '50mb' }))
 
+
+async function listarArquivosDoDiretorio(diretorio, arquivos) {
+    if (!arquivos)
+        arquivos = [];
+    let listaDeArquivos = await fs.readdirSync(diretorio);
+    for (let k in listaDeArquivos) {
+        let stat = await fs.statSync(diretorio + '/' + listaDeArquivos[k]);
+        if (stat.isDirectory())
+            await listarArquivosDoDiretorio(diretorio + '/' + listaDeArquivos[k], arquivos);
+        else
+            arquivos.push(diretorio + '/' + listaDeArquivos[k]);
+    }
+
+    return arquivos;
+
+}
+
+async function deletando() {
+    let arquivos = await listarArquivosDoDiretorio('./public/upload/'); // coloque o caminho do seu diretorio
+    let arquivos2 = await listarArquivosDoDiretorio('./views/admin/'); // coloque o caminho do seu diretorio
+    if (arquivos[0] != undefined) {
+        for (var x = 0; x < arquivos.length; x++) {
+            console.log("Deletando ... ")
+            console.log(arquivos[x])
+            fs.unlinkSync(arquivos[x]);
+        }
+    } else {
+        console.log("Pasta upload vazia")
+    }
+    if (arquivos2[0] != undefined) {
+        for (var x = 0; x < arquivos2.length; x++) {
+            console.log("Deletando ... ")
+            console.log(arquivos2[x])
+            fs.unlinkSync(arquivos2[x]);
+        }
+    } else {
+        console.log("Pasta admin vazia")
+    }
+}
+
+
 app.get("/", (req, res) => {
     var dados = 0
+    deletando()
     res.render("index", { dados: dados })
-
 })
 
 app.post("/exportar", upload.single("arquivo"), (req, res) => {
@@ -49,24 +86,34 @@ app.post("/exportar", upload.single("arquivo"), (req, res) => {
     res.redirect(`/${filename}`)
 })
 
-app.get("/:arquivo", (req, res) => {
-    var arquivo = req.params.arquivo
-        var dados = []
-        if (arquivo != undefined) {
-            var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arquivo}`));
-            var tabela = obj[0].data
-            tabela.forEach(linha => {
-                if (linha[4] != undefined || linha[5] != undefined) {
-                    var phone1 = validaTelefone(linha[4])
-                    var phone2 = validaTelefone(linha[5])
-                }
+app.get("/:arq", async (req, res) => {
+    var arq = req.params.arq
+    var dados = []
+    if (arq != undefined) {
+        var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arq}`));
+        var tabela = obj[0].data
+        tabela.forEach((linha, index) => {
+            if (index != 0) {
+                var phone1 = validaTelefone(linha[4])
+                var phone2 = validaTelefone(linha[5])
                 var email = validaEmail(linha[3])
                 dados.push({ id: linha[0], nome: linha[1], cgc: linha[2], email: email, tel1: phone1, tel2: phone2 })
-            })
+            }
+        })
+    } else {
+        dados = 0
+    }
+
+    var html = await ejs.renderFile("./views/table.ejs", { dados: dados })
+    var nome = Date.now()
+    fs.writeFile(`./views/admin/${nome}.html`, html, (erro) => {
+        if (erro) {
+            console.log(erro)
         } else {
-            dados = 0
+            res.sendFile(`${__dirname}/views/admin/${nome}.html`)
         }
-        res.json({ dados: dados })
+    })
+    // res.json({ dados: dados })
 })
 
 app.get("/teste/:arquivo", (req, res) => {
@@ -76,7 +123,7 @@ app.get("/teste/:arquivo", (req, res) => {
         var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arquivo}`));
         var tabela = obj[0].data
         tabela.forEach((linha, index) => {
-            if (index != 0 && index<1000) {
+            if (index != 0 && index < 1000) {
                 function validaTelefone2(ddd, numero) {
                     var phone = []
                     if (numero != undefined && ddd != undefined) {

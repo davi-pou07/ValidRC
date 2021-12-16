@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-Br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email CRM</title>
+
+    <style>
+        td {
+            text-align: center;
+        }
+
+        th {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body onload="start()">
+    <table id="getExcel">
+        <thead>
+            <tr>
+                <th class="text-center">Codigo</th>
+                <th class="text-center">Nome/Razão</th>
+                <th class="text-center">CGC</th>
+                <th class="text-center">Email</th>
+                <th class="text-center">Email Status</th>
+                <th class="text-center">Tel1</th>
+                <th class="text-center">Tipo</th>
+                <th class="text-center">Tel1 Status</th>
+                <th class="text-center">Tel2</th>
+                <th class="text-center">Tipo</th>
+                <th class="text-center">Tel2 Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <%dados.forEach(dado=>{%>
+                <tr>
+                    <td>
+                        <%=dado.id%>
+                    </td>
+                    <td>
+                        <%=dado.nome%>
+                    </td>
+                    <td>
+                        <%=dado.cgc%>
+                    </td>
+                    <td>
+                        <%=dado.email[0].email%>
+                    </td>
+                    <%if(dado.email[0].status=='valido' ){%>
+                        <td style="background-color:green; color: white; text-align: center;">
+                            <p>VALIDO</p>
+                        </td>
+                        <%}else{%>
+                            <td style="background-color: red; color: white; text-align: center;">
+                                <p>INVALIDO</p>
+                            </td>
+                            <%}%>
+                                <td>
+                                    <%=dado.tel1[0].numero%>
+                                </td>
+                                <td>
+                                    <%=dado.tel1[0].is%>
+                                </td>
+                                <%if(dado.tel1[0].status==true ){%>
+                                    <td style="background-color:green; color: white; text-align: center;">
+                                        VALIDO
+                                    </td>
+                                    <%}else{%>
+                                        <td style="background-color: red; color: white; text-align: center;">
+                                            INVALIDO
+                                        </td>
+                                        <%}%>
+                                            <td>
+                                                <%=dado.tel2[0].numero%>
+                                            </td>
+                                            <td>
+                                                <%=dado.tel2[0].is%>
+                                            </td>
+                                            <%if(dado.tel2[0].status==true){%>
+                                                <td style="background-color:green; color: white; text-align: center;">
+                                                    <p>VALIDO</p>
+                                                </td>
+                                                <%}else{%>
+                                                    <td
+                                                        style="background-color: red; color: white; text-align: center;">
+                                                        <p>INVALIDO</p>
+                                                    </td>
+                                                    <%}%>
+                </tr>
+                <%})%>
+        </tbody>
+    </table>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        async function start() {
+            async function exceller() {
+                var uri = 'data:application/vnd.ms-Excel;base64,',
+                    template = '<html xmlns:o="urn:schemas-Microsoft-com:office:office" xmlns:x="urn:schemas-Microsoft-com:office:Excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                    base64 = function (s) {
+                        return window.btoa(unescape(encodeURIComponent(s)))
+                    },
+                    format = function (s, c) {
+                        return s.replace(/{(\w+)}/g, function (m, p) {
+                            return c[p];
+                        })
+                    }
+                var toExcel = document.getElementById("getExcel").innerHTML;
+                var ctx = {
+                    worksheet: name || '',
+                    table: toExcel
+                };
+                var link = document.createElement("a");
+                link.download = "export.xls";
+                link.href = uri + base64(format(template, ctx))
+                link.click();
+                return true
+            }
+            var retorno = await exceller()
+            if (retorno == true) {
+                document.location = '/'
+            }
+        }
+    </script>
+</body>
+
+</html>
