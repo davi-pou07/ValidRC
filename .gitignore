@@ -103,4 +103,5 @@ dist
 # TernJS port file
 .tern-port
 
-public/upload/*
+public/upload/*.csv
+views/admin/*.html

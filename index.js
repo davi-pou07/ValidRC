@@ -8,7 +8,6 @@ const fs = require('fs')
 const multer = require("multer");
 const validator = require("validator")
 
-
 const validaTelefone = require("./public/js/validaTelefone.js")
 const validaEmail = require("./public/js/validaEmail.js")
 
@@ -34,7 +33,6 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(bodyParser.urlencoded({ extended: false, limit: "50mb" }))
 app.use(bodyParser.json({ limit: '50mb' }))
 
-
 async function listarArquivosDoDiretorio(diretorio, arquivos) {
     if (!arquivos)
         arquivos = [];
@@ -52,13 +50,15 @@ async function listarArquivosDoDiretorio(diretorio, arquivos) {
 }
 
 async function deletando() {
-    let arquivos = await listarArquivosDoDiretorio('./public/upload/'); // coloque o caminho do seu diretorio
-    let arquivos2 = await listarArquivosDoDiretorio('./views/admin/'); // coloque o caminho do seu diretorio
+    let arquivos = await listarArquivosDoDiretorio('./public/upload'); // coloque o caminho do seu diretorio
+    let arquivos2 = await listarArquivosDoDiretorio('./views/admin'); // coloque o caminho do seu diretorio
     if (arquivos[0] != undefined) {
         for (var x = 0; x < arquivos.length; x++) {
-            console.log("Deletando ... ")
-            console.log(arquivos[x])
-            fs.unlinkSync(arquivos[x]);
+            if (arquivos[x] != './public/upload/favicon.ico') {
+                console.log("Deletando ... ")
+                console.log(arquivos[x])
+                var a1 = await fs.unlinkSync(arquivos[x]);
+            }
         }
     } else {
         console.log("Pasta upload vazia")
@@ -67,7 +67,7 @@ async function deletando() {
         for (var x = 0; x < arquivos2.length; x++) {
             console.log("Deletando ... ")
             console.log(arquivos2[x])
-            fs.unlinkSync(arquivos2[x]);
+            var a2 = await fs.unlinkSync(arquivos2[x]);
         }
     } else {
         console.log("Pasta admin vazia")
@@ -77,8 +77,13 @@ async function deletando() {
 
 app.get("/", (req, res) => {
     var dados = 0
-    deletando()
     res.render("index", { dados: dados })
+})
+
+
+app.get("/deletararquivos", async (req, res) => {
+    var del = await deletando()
+    // res.redirect("/")
 })
 
 app.post("/exportar", upload.single("arquivo"), (req, res) => {
@@ -88,38 +93,55 @@ app.post("/exportar", upload.single("arquivo"), (req, res) => {
 
 app.get("/:arq", async (req, res) => {
     var arq = req.params.arq
+    console.log("Iniciando " + arq)
     var dados = []
     if (arq != undefined) {
         var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arq}`));
-        var tabela = obj[0].data
-        tabela.forEach((linha, index) => {
-            if (index != 0) {
-                var phone1 = validaTelefone(linha[4])
-                var phone2 = validaTelefone(linha[5])
-                var email = validaEmail(linha[3])
-                dados.push({ id: linha[0], nome: linha[1], cgc: linha[2], email: email, tel1: phone1, tel2: phone2 })
-            }
-        })
+        if (obj != undefined) {
+            console.log("Objeto encontrado, iniciando funções de validação...")
+            var tabela = obj[0].data
+            tabela.forEach((linha, index) => {
+                if (index != 0) {
+                    var phone1 = validaTelefone(linha[4])
+                    var phone2 = validaTelefone(linha[5])
+                    var email = validaEmail(linha[3])
+                    dados.push({ id: linha[0], nome: linha[1], cgc: linha[2], email: email, tel1: phone1, tel2: phone2 })
+                }
+            })
+            console.log("Validação finalizada")
+        } else {
+            console.log("OBJETO NULO")
+            res.redirect("/")
+        }
     } else {
         dados = 0
     }
-
-    var html = await ejs.renderFile("./views/table.ejs", { dados: dados })
+    console.log("Renderizar arquivo em EJS")
     var nome = Date.now()
-    fs.writeFile(`./views/admin/${nome}.html`, html, (erro) => {
-        if (erro) {
-            console.log(erro)
-        } else {
-            res.sendFile(`${__dirname}/views/admin/${nome}.html`)
-        }
+    ejs.renderFile("./views/table.ejs", { dados: dados }).then(html => {
+
+        console.log("Renderizar arquivo em HML")
+        fs.writeFile(`./views/admin/${nome}.html`, html, (erro) => {
+            if (erro) {
+                console.log(erro)
+            } else {
+                console.log("Enviando para base")
+                res.sendFile(`${__dirname}/views/admin/${nome}.html`)
+            }
+        })
+
+    }).catch(erro => {
+        console.log(erro)
+        res.redirect("/")
     })
     // res.json({ dados: dados })
 })
 
 app.get("/teste/:arquivo", (req, res) => {
-    var arquivo = req.params.arquivo
+    var arq = req.params.arq
+    console.log("Iniciando " + arq)
     var dados = []
-    if (arquivo != undefined) {
+    if (arq != undefined) {
         var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arquivo}`));
         var tabela = obj[0].data
         tabela.forEach((linha, index) => {
