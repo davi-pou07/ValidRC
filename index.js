@@ -88,7 +88,7 @@ app.get("/deletararquivos", async (req, res) => {
 
 app.post("/exportar", upload.single("arquivo"), (req, res) => {
     var filename = req.file.filename
-    res.redirect(`/${filename}`)
+    res.redirect(`/admin/${filename}`)
 })
 
 app.get("/:arq", async (req, res) => {
@@ -136,6 +136,153 @@ app.get("/:arq", async (req, res) => {
     })
     // res.json({ dados: dados })
 })
+
+
+
+
+
+app.get("/opq/:arq", async (req, res) => {
+    var arq = req.params.arq
+    console.log("Iniciando " + arq)
+    var dados = []
+    if (arq != undefined) {
+        var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arq}`));
+        if (obj != undefined) {
+            console.log("Objeto encontrado, iniciando funções de validação...")
+            var tabela = obj[0].data
+            tabela.forEach((linha, index) => {
+                if (index != 0) {
+                    var phone1 = validaTelefone(linha[4])
+                    var phone2 = validaTelefone(linha[5])
+                    var email = validaEmail(linha[3])
+                    dados.push({ id: linha[0], nome: linha[1], cgc: linha[2], email: email, tel1: phone1, tel2: phone2 })
+                }
+            })
+            console.log("Validação finalizada")
+        } else {
+            console.log("OBJETO NULO")
+            res.redirect("/")
+        }
+    } else {
+        dados = 0
+    }
+    console.log("Renderizar arquivo em EJS")
+    var nome = Date.now()
+    ejs.renderFile("./views/table.ejs", { dados: dados }).then(html => {
+
+        console.log("Renderizar arquivo em HML")
+        fs.writeFile(`./views/admin/${nome}.html`, html, async(erro) => {
+            if (erro) {
+                console.log(erro)
+            } else {
+                console.log("Enviando para base")
+
+                async function exceller(ht) {
+                    var uri = 'data:application/vnd.ms-Excel;base64,',
+                        template = '<html xmlns:o="urn:schemas-Microsoft-com:office:office" xmlns:x="urn:schemas-Microsoft-com:office:Excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+                        base64 = function (s) {
+                            return this.btoa(unescape(s))
+                        },
+                        format = function (s, c) {
+                            return s.replace(/{(\w+)}/g, function (m, p) {
+                                return c[p];
+                            })
+                        }
+                    var toExcel = ht;
+                    var ctx = {
+                        worksheet: 'texte',
+                        table: toExcel
+                    };
+                    // var link = document.createElement("a");
+                    // link.download = "export.xls";
+                    var download = uri + base64(format(template, ctx))
+                    // link.href = 
+                    // link.click();
+                    return download
+                }
+                console.log(html.length)
+                var retorno = await exceller(html)
+                if (retorno != undefined) {
+                    res.render("teste",{retorno:retorno})
+                }
+
+
+
+                // res.sendFile(`${__dirname}/views/admin/${nome}.html`)
+            }
+        })
+
+    }).catch(erro => {
+        console.log(erro)
+        res.redirect("/")
+    })
+    // res.json({ dados: dados })
+})
+
+
+
+
+
+// app.get("/admin/:arq", async (req, res) => {
+//     var arq = req.params.arq
+//     console.log("Iniciando " + arq)
+//     var dados = []
+//     var parte = 0
+//     if (arq != undefined) {
+//         var obj = XLSX.parse(fs.readFileSync(`./public/upload/${arq}`));
+//         if (obj != undefined) {
+//             console.log("Objeto encontrado, iniciando funções de validação...")
+//             var tabela = obj[0].data
+//             tabela.forEach((linha, index) => {
+//                 if (index != 0) {
+//                     var phone1 = validaTelefone(linha[4])
+//                     var phone2 = validaTelefone(linha[5])
+//                     var email = validaEmail(linha[3])
+//                     dados.push({ id: linha[0], nome: linha[1], cgc: linha[2], email: email, tel1: phone1, tel2: phone2 })
+//                 }
+//             })
+//             console.log("Validação finalizada")
+//         } else {
+//             console.log("OBJETO NULO")
+//             res.redirect("/")
+//         }
+//     } else {
+//         dados = 0
+//     }
+//     console.log("Dividindo arquivo")
+//     var nome = Date.now()
+//     parte = dados.length / 4
+//     var cont = 1
+//     var x = parte
+//     var y = 0
+
+//     while (parte <= dados.length) {
+//         var dadosDivididos = []
+//         for (y; y < parte; y++) {
+//             dadosDivididos.push(dados[y])
+//         }
+
+//         cont++
+//         parte = x * cont
+//     }
+//     // ejs.renderFile("./views/table.ejs", { dados: dados }).then(html => {
+
+//     //     console.log("Renderizar arquivo em HML")
+//     //     fs.writeFile(`./views/admin/${nome}.html`, html, (erro) => {
+//     //         if (erro) {
+//     //             console.log(erro)
+//     //         } else {
+//     //             console.log("Enviando para base")
+//     //             res.sendFile(`${__dirname}/views/admin/${nome}.html`)
+//     //         }
+//     //     })
+
+//     // }).catch(erro => {
+//     //     console.log(erro)
+//     //     res.redirect("/")
+//     // })
+//     // res.json({ dados: dados })
+// })
 
 app.get("/teste/:arquivo", (req, res) => {
     var arq = req.params.arq
